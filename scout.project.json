@@ -1,0 +1,30 @@
+﻿{
+  "project": {
+    "title": "Microsoft Scout: Agentic Workflow Copilot",
+    "tagline": "An AI-powered agentic copilot that orchestrates tools, MCP servers, Microsoft 365 context, and workflow automation to help people move from intent to action faster.",
+    "type": "Hackathon Project",
+    "category": "Agentic AI",
+    "productFit": [
+      "Microsoft Copilot Studio",
+      "Microsoft 365 Copilot",
+      "MCP-enabled agent infrastructure",
+      "Microsoft Teams",
+      "Outlook",
+      "Dynamics 365"
+    ]
+  },
+  "capabilities": [
+    "Agentic AI orchestration",
+    "MCP server integration",
+    "Workflow automation",
+    "Workflow optimization",
+    "Multi-agent coordination",
+    "Microsoft 365-aware productivity",
+    "AI-assisted data analysis",
+    "Human-in-the-loop approvals",
+    "Support operations automation",
+    "Document and dashboard generation"
+  ],
+  "problemStatement": "Knowledge workers and support teams lose time translating intent into action across disconnected systems. Scout explores how an agentic AI copilot can coordinate tools, context, and workflows to complete reviewable work safely and efficiently.",
+  "approach": "Scout was taught repeatable skills and workflows across Microsoft 365, support operations, documents, dashboards, browser automation, case management, and business process automation."
+}
