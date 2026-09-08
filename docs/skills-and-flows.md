@@ -21,6 +21,7 @@ All Scout skills and flows should follow these rules:
 - Wherever possible, produce both human-readable recommendations and structured fields Scout can reuse in subsequent workflows.
 - Do not invent SLA requirements, severity requirements, PG commitments, customer statements, or case history that is not available in the source data.
 - Customer-facing messages, DFM replies, Teams messages, case updates, and external communications require human review before sending.
+- PG owner-discovery guardrail: for PG/IcM/bug/Standpoint blockers, Scout must identify the actual PG owner, active PG contact, IcM owner, Standpoint owner, or owning team before drafting follow-up. Do not default to pinging the support engineer when the support engineer is also blocked on finding PG ownership.
 
 ## CSS Delivery Key Focus Areas
 
@@ -59,6 +60,7 @@ These skills help an engineer make better decisions case by case.
 - /dsat-risk
 - /tput-coach
 - /next-best-action
+- /pg-owner-finder
 - /run-my-backlog
 - /mycases
 - /heartbeattop5
@@ -83,6 +85,7 @@ These skills turn support demand into evidence Product Group can act on.
 
 - /case-patterns-to-product-fixes
 - /pg-okr-dashboard
+- /pg-owner-finder
 - /pg-icm-follow-up
 - /icm-dive
 - /outage
@@ -109,6 +112,12 @@ This answers: what needs attention immediately, what is at risk, and what action
 /toil-hunter -> /km-gap-finder -> /case-patterns-to-product-fixes
 
 This answers: why are engineers repeatedly doing this work, and should we automate it, document it, simplify it, eliminate it, or fix the product?
+
+### PG dependency owner-resolution loop
+
+/pg-owner-finder -> /pg-icm-follow-up or /icm-dive -> /pg-okr-dashboard when repeated
+
+This answers: who actually owns the PG, bug, IcM, or Standpoint next action, and is repeated owner-hunting a process/product friction pattern that should be eliminated?
 
 ### Support and Product Group improvement loop
 
@@ -218,7 +227,101 @@ Do not choose a metric-improving path if it worsens customer outcomes. Do not ru
 
 ---
 
-## 2. /tput-coach
+## 2. /pg-owner-finder
+
+### Purpose
+
+Resolve the actual Product Group, bug, IcM, Standpoint, or active engineering owner for a blocked support case before any follow-up is drafted.
+
+This skill exists to prevent a painful failure mode: Scout pings the support engineer even though the support engineer is also trying to find the PG contact.
+
+### Core rule
+
+Do not make the support engineer the primary recipient for a PG/IcM status, ETA, fix, or ownership ask unless evidence shows the support engineer owns the next action, or every PG-owner resolution path is blocked and Scout clearly says what could not be resolved.
+
+### Use when
+
+Use /pg-owner-finder when:
+
+- A case is Waiting for Product Team.
+- A case is blocked on PG, IcM, a bug, Standpoint, pending fix, or pending ETA.
+- /pg-icm-follow-up, /icm-dive, /teams-push, /next-best-action, /dsat-risk, /tput-coach, or /run-my-backlog needs to know who should be contacted.
+- A support engineer appears to be asking who in PG owns an issue.
+- The latest visible support action is only an internal escalation attempt, not the actual dependency owner.
+
+### Owner resolution ladder
+
+Scout should check sources in this order where available:
+
+1. DFM/OneSupport case timeline: IcM IDs, bug IDs, Azure DevOps links, Standpoint links, Teams swarm links, collab records, PG aliases, named PG engineers, product area, and internal notes.
+2. IcM: owning team, owning service, active owner, responsible team, latest PG-facing update, mitigation owner, incident commander, and action-item owners.
+3. Azure DevOps bug or work item: assigned-to, state, area path, tags, latest discussion, last changed by, people discussing the fix, release/fix vehicle, ETA, rollout notes, and linked PR or feature work.
+4. Standpoint or PG tracking item: owner, status, target date, latest update, and related work item links.
+5. Teams swarm or PG thread: person who most recently gave a substantive engineering update, accepted an action, supplied an ETA, or asked for required diagnostic data.
+6. Case/email history: use support engineer statements to find references or gaps, but do not treat "I am checking with PG" as proof that the support engineer owns the PG action.
+7. Directory lookup: resolve named PG contacts or aliases only after source evidence identifies them as relevant.
+
+### Owner classification
+
+Classify the result as:
+
+Confirmed PG owner
+
+- Current assigned owner, IcM owner, Standpoint owner, or explicit PG action owner found.
+
+Active PG contact
+
+- PG engineer or product owner recently providing substantive updates, even if not formally assigned.
+
+Owning team only
+
+- Team or area path found, but no individual owner.
+
+Support-owned action
+
+- Support must collect logs, repro, customer confirmation, or DFM updates before PG can act.
+
+Unresolved owner
+
+- No reliable PG contact found after checking available sources.
+
+### Output
+
+- Case ID and title
+- Dependency references found
+- Owner classification
+- Recommended primary recipient
+- Secondary or context recipients
+- Why this person or team is the right target
+- Exact evidence source and timestamp/date where available
+- Missing evidence or access gaps
+- Recommended ask: status, ETA, owner confirmation, fix vehicle, customer-safe update, required data, or escalation path
+- Confidence: High, Medium, or Low
+
+### Structured fields
+
+- caseId
+- dependencyIds
+- sourceLinks
+- ownerClassification
+- primaryRecipient
+- secondaryRecipients
+- owningTeam
+- evidenceSources
+- lastMeaningfulPGUpdate
+- staleDays
+- recommendedAsk
+- supportOwnedPrerequisite
+- unresolvedReason
+- confidence
+
+### Guardrails
+
+Do not invent PG owners, aliases, ETAs, bug states, IcM states, release vehicles, or commitments. If only a support engineer is visible, output Unresolved owner or Support-owned action rather than pretending they are the PG owner. If the support engineer is themselves asking for a PG contact, do not ping them for the PG update; escalate the owner-resolution gap and recommend the next evidence source to check.
+
+---
+
+## 3. /tput-coach
 
 ### Purpose
 
@@ -365,7 +468,7 @@ TPUT optimization risk: recommendation may improve the metric without improving 
 
 ---
 
-## 3. /ir-watch
+## 4. /ir-watch
 
 ### Purpose
 
@@ -489,7 +592,7 @@ Do not:
 
 ---
 
-## 4. /dsat-risk
+## 5. /dsat-risk
 
 ### Purpose
 
@@ -622,7 +725,7 @@ Scout must never describe a customer as difficult. Analyze case conditions and c
 
 ---
 
-## 5. /toil-hunter
+## 6. /toil-hunter
 
 ### Purpose
 
@@ -743,7 +846,7 @@ Elimination is preferable to automating unnecessary work. If the root cause is m
 
 ---
 
-## 6. /pg-okr-dashboard
+## 7. /pg-okr-dashboard
 
 ### Purpose
 
@@ -852,7 +955,7 @@ Do not characterize PG performance based only on raw case counts. Normalize wher
 
 ---
 
-## 7. /km-gap-finder
+## 8. /km-gap-finder
 
 ### Purpose
 
@@ -950,7 +1053,7 @@ Do not present unvalidated troubleshooting as authoritative KM. Mark hypotheses 
 
 ---
 
-## 8. /case-patterns-to-product-fixes
+## 9. /case-patterns-to-product-fixes
 
 ### Purpose
 
@@ -1090,7 +1193,7 @@ Do not overstate product causality from support data alone. Normalize and caveat
 
 ---
 
-## 9. /capacity-saved-report
+## 10. /capacity-saved-report
 
 ### Purpose
 
